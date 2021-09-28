@@ -1,0 +1,5 @@
+---
+- name: fake
+  repo: pete0emerson/terraform-aws-fake
+  source: tutorials/fake
+  destination: content/fake
