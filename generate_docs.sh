@@ -2,21 +2,22 @@
 
 set -e
 
-# ./generate_docs.sh pete0emerson/terraform-aws-fake tutorials/fake fake v0.0.1
+# ./generate_docs.sh pete0emerson/terraform-aws-fake tutorials/fake fake v0.0.3
 
 repo=$1
 source=$2
 name=$3
 version=$4
 
-#rm -rf repos/$name
-#git clone --depth 1 --branch $version git@github.com:$repo.git repos/$name
-#mkdir -p content/$name
+rm -rf repos/$name
+git clone --depth 1 --branch $version git@github.com:$repo.git repos/$name
+rm -rf content/$name
+mkdir -p content/$name
 
-# Naive approach
-#cp -R repos/$name/$source/* content/$name/
+# Get everything in there, we'll replace markdown later (Naive approach)
+cp -R repos/$name/$source/* content/$name/
 
-function process_line() {
+function link_process_line() {
 	local line=$1
 	echo "$line" | grep '\[.*\]\(.*\)' > /dev/null
 	if [[ $? -eq 0 ]] ; then
@@ -33,13 +34,41 @@ function process_line() {
 	fi
 }
 
+function process_line() {
+	local line=$1
+	echo "$line" | grep '^include::' > /dev/null 2>&1
+	if [[ $? -eq 0 ]] ; then
+		file=$(echo "$line" | sed 's/^include:://')
+		echo "$file" | grep '\[[0-9]*..[0-9]*\]' > /dev/null 2>&1
+		if [[ $? -eq 0 ]] ; then
+			f=$(echo "$file" | sed 's/\[.*//')
+			start=$(echo "$file" | cut -d \[ -f 2 | cut -d . -f 1)
+			end=$(echo "$file" | cut -d \[ -f 2 | cut -d . -f 3 | sed 's/]//')
+			let diff=$end-$start+1
+			cat $f | head -n $end | tail -n $diff
+		else
+			cat $file
+		fi
+	else
+		echo "$line"
+	fi
+}
+
 for file in $(find repos/$name/$source -type f -name "*.md") ; do
 	dest=$(echo $file | sed "s#repos/$name/$source/#content/$name/#")
-	echo "$file ==> $dest"
-	cat $file | while read line ; do
+	destdir=$(dirname $dest)
+	mkdir -p $destdir
+	touch $dest
+	dirname=$(dirname $file)
+	basename=$(basename $file)
+	cd $dirname
+	>&2 echo "$dirname --> $basename ==> $dest"
+	rm -f $dest
+	cat $basename | while read line ; do
 		newline=$(process_line "$line")
-		echo "Line: $newline"
+		cd - > /dev/null 2>&1 
+		echo "$newline" >> $dest
+		cd $dirname
 	done
+	cd - > /dev/null 2>&1
 done
-#* [Relative file link](../../examples/for-production/infrastructure-live/second.md)
-#* [Relative path link](/examples/for-production/infrastructure-live/)
