@@ -17,7 +17,7 @@ If you want to see some changes, run this:
 ./generate_docs.sh pete0emerson/terraform-aws-fake tutorials/fake fake v0.0.4
 ```
 
-Tou can now see the files ready to be committed and deployed:
+You can now see the files ready to be committed and deployed:
 
 ```
  docs git:(main) ✗ $ git status -u
