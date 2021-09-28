@@ -11,13 +11,13 @@ version=$4
 
 rm -rf repos/$name
 git clone --depth 1 --branch $version git@github.com:$repo.git repos/$name
-rm -rf content/$name
-mkdir -p content/$name
+rm -rf content/$name/$version
+mkdir -p content/$name/$version
 
 # Get everything in there, we'll replace markdown later (Naive approach)
-cp -R repos/$name/$source/* content/$name/
+cp -R repos/$name/$source/* content/$name/$version
 
-function link_process_line() {
+function DEAD_process_line() {
 	local line=$1
 	echo "$line" | grep '\[.*\]\(.*\)' > /dev/null
 	if [[ $? -eq 0 ]] ; then
@@ -55,15 +55,15 @@ function process_line() {
 }
 
 for file in $(find repos/$name/$source -type f -name "*.md") ; do
-	dest=$(echo $file | sed "s#repos/$name/$source/#content/$name/#")
+	dest=$(echo $file | sed "s#repos/$name/$source/#content/$name/$version/#")
 	destdir=$(dirname $dest)
 	mkdir -p $destdir
 	touch $dest
 	dirname=$(dirname $file)
 	basename=$(basename $file)
+	rm -f $dest
 	cd $dirname
 	>&2 echo "$dirname --> $basename ==> $dest"
-	rm -f $dest
 	cat $basename | while read line ; do
 		newline=$(process_line "$line")
 		cd - > /dev/null 2>&1 
